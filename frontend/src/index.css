@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root {
+  height: 100%;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #232A38 #0B0E14;
+}
+
+:focus-visible {
+  outline: 2px solid #4FD8EB;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Conic gradient legend for the phase-color convention used throughout the UI */
+.phase-wheel {
+  background: conic-gradient(
+    from 0deg,
+    #4FD8EB 0deg,
+    #B98EFF 90deg,
+    #FF7B72 180deg,
+    #FFC46B 270deg,
+    #4FD8EB 360deg
+  );
+}
