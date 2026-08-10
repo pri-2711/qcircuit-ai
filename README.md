@@ -10,7 +10,8 @@ endpoints tested end-to-end (including the security sandbox and timeout),
 frontend built with `npm run build` with zero errors, and the two talking to
 each other over a live HTTP request through the real Vite dev proxy.
 
-## Quick start (two terminals)
+## Quick start (two terminals) -> using cmd
+
 
 ```bash
 # Terminal 1 -- backend
