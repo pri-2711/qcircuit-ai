@@ -6,7 +6,7 @@ const LANGUAGES = [
 
 export default function Sidebar({ language, onLanguageChange, examples, onLoadExample, activeExampleKey }) {
   return (
-    <aside className="w-64 shrink-0 border-r border-slateline bg-slate/40 flex flex-col">
+    <aside className="w-64 shrink-0 border-r border-slateline bg-slate/40 flex flex-col resizable-h">
       <div className="px-4 py-4 border-b border-slateline">
         <h1 className="font-display text-lg leading-tight">
           Quantum Circuit<br />Explorer
@@ -55,9 +55,9 @@ export default function Sidebar({ language, onLanguageChange, examples, onLoadEx
       </div>
 
       <div className="px-4 py-3 border-t border-slateline">
-        <div className="flex items-center gap-2 text-[11px] text-fog">
-          <span className="w-3 h-3 rounded-full phase-wheel inline-block" />
-          amplitude phase legend
+        <div className="flex items-start gap-2 text-[11px] text-fog leading-snug">
+          <span className="w-3 h-3 rounded-full phase-wheel inline-block mt-0.5 shrink-0" />
+          <span>Amplitude = bar length • Phase = color</span>
         </div>
       </div>
     </aside>

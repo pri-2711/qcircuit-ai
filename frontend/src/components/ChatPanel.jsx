@@ -10,7 +10,7 @@ export default function ChatPanel({ messages, onSend, sending }) {
   };
 
   return (
-    <div className="border-t border-slateline bg-slate/40 flex flex-col h-56">
+    <div className="border-t border-slateline bg-slate/40 flex flex-col h-56 resizable-v">
       <div className="px-4 py-1.5 text-xs uppercase tracking-wide text-fog border-b border-slateline">
         Ask the tutor
       </div>
@@ -24,7 +24,7 @@ export default function ChatPanel({ messages, onSend, sending }) {
         {messages.map((m, i) => (
           <div
             key={i}
-            className={`text-xs leading-relaxed max-w-[85%] rounded-md px-3 py-2 whitespace-pre-wrap ${
+            className={`text-xs leading-relaxed max-w-[85%] rounded-md px-3 py-2 whitespace-pre-wrap prose prose-invert prose-xs ${
               m.role === "user"
                 ? "bg-phase0/10 border border-phase0/30 ml-auto text-mist"
                 : "bg-void border border-slateline text-mist"

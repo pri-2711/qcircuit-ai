@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from dotenv import load_dotenv
-load_dotenv()  # so OPENAI_API_KEY / GEMINI_API_KEY from .env are picked up before explainer.py reads them
+
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -107,7 +110,7 @@ def analyze(source: CircuitSource):
 async def explain(req: ExplainRequest):
     qc = _parse_or_400(CircuitSource(code=req.code, language=req.language))
     analysis = full_analysis(qc)
-    result = await explain_circuit(analysis, req.question)
+    result = await explain_circuit(analysis, req.question, circuit_code=req.code, language=req.language)
     return ExplainResponse(**result)
 
 
@@ -121,5 +124,5 @@ async def chat(req: ChatRequest):
         except CircuitParseError:
             analysis = None  # let the chat proceed without circuit grounding rather than 400ing
     messages = [{"role": m.role, "content": m.content} for m in req.messages]
-    result = await chat_reply(messages, analysis)
+    result = await chat_reply(messages, analysis, circuit_code=req.code, language=req.language)
     return ChatResponse(**result)

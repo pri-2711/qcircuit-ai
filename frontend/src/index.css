@@ -23,6 +23,18 @@ html, body, #root {
   }
 }
 
+.resizable-h {
+  resize: horizontal;
+  overflow: auto;
+  min-width: 16rem;
+}
+
+.resizable-v {
+  resize: vertical;
+  overflow: auto;
+  min-height: 10rem;
+}
+
 /* Conic gradient legend for the phase-color convention used throughout the UI */
 .phase-wheel {
   background: conic-gradient(

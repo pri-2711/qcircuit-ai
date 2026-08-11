@@ -18,12 +18,17 @@ so the scaffold has zero required framework dependencies.
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import httpx
+from dotenv import load_dotenv
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+
+
+def _get_api_keys() -> tuple[Optional[str], Optional[str]]:
+    return os.getenv("OPENAI_API_KEY"), os.getenv("GEMINI_API_KEY")
 
 
 def _template_explanation(analysis: Dict[str, Any], question: Optional[str] = None) -> str:
@@ -61,10 +66,11 @@ def _template_explanation(analysis: Dict[str, Any], question: Optional[str] = No
 
 
 async def _call_openai(system_prompt: str, user_prompt: str) -> str:
+    openai_key, _ = _get_api_keys()
     async with httpx.AsyncClient(timeout=30) as client:
         resp = await client.post(
             "https://api.openai.com/v1/chat/completions",
-            headers={"Authorization": f"Bearer {OPENAI_API_KEY}"},
+            headers={"Authorization": f"Bearer {openai_key}"},
             json={
                 "model": "gpt-4o-mini",
                 "messages": [
@@ -80,17 +86,37 @@ async def _call_openai(system_prompt: str, user_prompt: str) -> str:
 
 
 async def _call_gemini(system_prompt: str, user_prompt: str) -> str:
-    async with httpx.AsyncClient(timeout=30) as client:
-        resp = await client.post(
-            "https://generativelanguage.googleapis.com/v1beta/models/"
-            f"gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}",
-            json={
-                "contents": [{"parts": [{"text": f"{system_prompt}\n\n{user_prompt}"}]}],
-            },
-        )
-        resp.raise_for_status()
+    _, gemini_key = _get_api_keys()
+    if not gemini_key:
+        raise RuntimeError("GEMINI_API_KEY is not configured")
+
+    url = "https://generativelanguage.googleapis.com/v1/models/gemini-3.6-flash:generateContent"
+    headers = {
+        "Content-Type": "application/json",
+        "x-goog-api-key": gemini_key,
+    }
+    payload = {
+        "contents": [
+            {
+                "role": "user",
+                "parts": [{"text": f"{system_prompt}\n\n{user_prompt}"}],
+            }
+        ]
+    }
+
+    async with httpx.AsyncClient(timeout=60) as client:
+        resp = await client.post(url, headers=headers, json=payload)
+        body = resp.text
+        if resp.status_code >= 400:
+            detail = f"Gemini API error {resp.status_code}: {body}"
+            print(detail)
+            raise RuntimeError(detail)
+
         data = resp.json()
-        return data["candidates"][0]["content"]["parts"][0]["text"]
+        try:
+            return data["candidates"][0]["content"]["parts"][0]["text"]
+        except (KeyError, IndexError, TypeError) as exc:
+            raise RuntimeError(f"Unexpected Gemini response format: {body}") from exc
 
 
 SYSTEM_PROMPT = (
@@ -101,43 +127,73 @@ SYSTEM_PROMPT = (
     "not invent gates, qubit counts, or probabilities that aren't in it. "
     "Explain clearly for someone learning quantum computing, include the "
     "relevant math (bra-ket notation is fine) where it helps, and keep the "
-    "answer focused and not overly long."
+    "answer focused and not overly long. "
+    "Format answers with short sections, bullet points, and compact markdown, "
+    "using math notation in LaTeX when helpful. Avoid long unstructured prose."
 )
 
 
-async def explain_circuit(analysis: Dict[str, Any], question: Optional[str] = None) -> Dict[str, str]:
-    if not (OPENAI_API_KEY or GEMINI_API_KEY):
+async def explain_circuit(
+    analysis: Dict[str, Any],
+    question: Optional[str] = None,
+    circuit_code: Optional[str] = None,
+    language: Optional[str] = None,
+) -> Dict[str, str]:
+    openai_key, gemini_key = _get_api_keys()
+    if not (openai_key or gemini_key) or question is None:
         return {"explanation": _template_explanation(analysis, question), "source": "template"}
 
-    user_prompt = f"Circuit analysis JSON:\n{analysis}\n\n"
-    user_prompt += f"User question: {question}" if question else "Give a general explanation of this circuit."
+    circuit_note = f"Circuit source ({language or 'unknown'}):\n{circuit_code}\n\n" if circuit_code else ""
+    user_prompt = f"{circuit_note}Circuit analysis JSON:\n{analysis}\n\n"
+    user_prompt += f"User question: {question}"
 
     try:
-        text = await (_call_openai(SYSTEM_PROMPT, user_prompt) if OPENAI_API_KEY
-                      else _call_gemini(SYSTEM_PROMPT, user_prompt))
-        return {"explanation": text, "source": "llm"}
+        if gemini_key:
+            text = await _call_gemini(SYSTEM_PROMPT, user_prompt)
+        elif openai_key:
+            text = await _call_openai(SYSTEM_PROMPT, user_prompt)
+        else:
+            text = _template_explanation(analysis, question)
+        return {"explanation": text, "source": "llm" if gemini_key or openai_key else "template"}
     except Exception as e:  # noqa: BLE001 - never let a flaky LLM call break the tutor
         fallback = _template_explanation(analysis, question)
         return {"explanation": f"{fallback}\n\n[LLM call failed, showing template explanation: {e}]",
                 "source": "template"}
 
 
-async def chat_reply(messages: List[Dict[str, str]], analysis: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
+async def chat_reply(
+    messages: List[Dict[str, str]],
+    analysis: Optional[Dict[str, Any]] = None,
+    circuit_code: Optional[str] = None,
+    language: Optional[str] = None,
+) -> Dict[str, str]:
     last_user = next((m["content"] for m in reversed(messages) if m["role"] == "user"), "")
-    if not (OPENAI_API_KEY or GEMINI_API_KEY):
-        context = f" (circuit context: {analysis['detected_patterns']})" if analysis else ""
+    if not last_user:
         return {
-            "reply": "I'm running in template mode (no LLM API key configured), so I can't hold a "
-                     f"free-form conversation yet{context}. Set OPENAI_API_KEY or GEMINI_API_KEY in "
-                     "the backend .env to enable the full conversational tutor.",
+            "reply": "Ask the tutor a question about the current circuit to get a grounded explanation.",
             "source": "template",
         }
 
-    context_note = f"\n\nCurrent circuit analysis JSON (ground answers in this if relevant): {analysis}" if analysis else ""
+    openai_key, gemini_key = _get_api_keys()
+    if not (openai_key or gemini_key):
+        context = f" (circuit context: {analysis['detected_patterns']})" if analysis else ""
+        return {
+            "reply": "I'm running in template mode (no LLM API key configured), so I can't hold a "
+                     f"free-form conversation yet{context}. Set GEMINI_API_KEY in the backend .env "
+                     "to enable the full conversational tutor.",
+            "source": "template",
+        }
+
+    circuit_note = f"\n\nCircuit source ({language or 'unknown'}):\n{circuit_code}" if circuit_code else ""
+    context_note = f"{circuit_note}\n\nCurrent circuit analysis JSON (ground answers in this if relevant): {analysis}" if analysis else circuit_note
     convo = "\n".join(f"{m['role'].upper()}: {m['content']}" for m in messages)
     try:
-        text = await (_call_openai(SYSTEM_PROMPT + context_note, convo) if OPENAI_API_KEY
-                      else _call_gemini(SYSTEM_PROMPT + context_note, convo))
-        return {"reply": text, "source": "llm"}
+        if gemini_key:
+            text = await _call_gemini(SYSTEM_PROMPT + context_note, convo)
+        elif openai_key:
+            text = await _call_openai(SYSTEM_PROMPT + context_note, convo)
+        else:
+            text = _template_explanation(analysis, last_user)
+        return {"reply": text, "source": "llm" if gemini_key or openai_key else "template"}
     except Exception as e:  # noqa: BLE001
         return {"reply": f"LLM call failed: {e}", "source": "template"}

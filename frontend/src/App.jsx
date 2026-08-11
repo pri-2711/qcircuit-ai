@@ -75,7 +75,7 @@ export default function App() {
   const askTutor = async () => {
     setExplaining(true);
     try {
-      const res = await api.explain(code, language);
+      const res = await api.explain(code, language, "Explain this circuit.");
       setChatMessages((prev) => [...prev, { role: "assistant", content: res.explanation }]);
     } catch (e) {
       setChatMessages((prev) => [...prev, { role: "assistant", content: `Couldn't generate an explanation: ${e.message}` }]);

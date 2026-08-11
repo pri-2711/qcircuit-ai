@@ -46,7 +46,7 @@ export default function ResultsTabs({ simResult }) {
   const [tab, setTab] = useState("Diagram");
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full resizable-v">
       <div className="flex border-b border-slateline bg-slate/40">
         {TABS.map((t) => (
           <button
@@ -67,17 +67,19 @@ export default function ResultsTabs({ simResult }) {
         )}
 
         {simResult && tab === "Diagram" && (
-          <img
-            src={`data:image/png;base64,${simResult.diagram_png_base64}`}
-            alt="Circuit diagram"
-            className="max-w-full bg-white rounded-md p-2"
-          />
+          <div className="h-full w-full flex items-center justify-center overflow-auto">
+            <img
+              src={`data:image/png;base64,${simResult.diagram_png_base64}`}
+              alt="Circuit diagram"
+              className="max-w-full max-h-full object-contain bg-white rounded-md p-2"
+            />
+          </div>
         )}
 
         {simResult && tab === "Statevector" && (
           <div>
             <p className="text-xs text-fog mb-3">
-              Amplitude bar length = magnitude, color = phase angle (see legend, top left).
+              Amplitude bar length = magnitude; phase = color (see legend below).
             </p>
             {simResult.basis_labels.map((label, i) => {
               const re = simResult.statevector_real[i];
