@@ -30,6 +30,9 @@ Open `http://localhost:5173`. Pick an example circuit from the sidebar (or
 write your own), hit **Run simulation**, and explore the Diagram /
 Statevector / Probabilities tabs plus the analysis panel on the right.
 
+For a full, detailed project reference (architecture diagrams, data flows,
+component map, and developer workflow), see the companion file: [projectInfo.md](projectInfo.md)
+
 No API keys are required to run it -- `/api/explain` and `/api/chat` work out
 of the box using a template explainer grounded in the real analysis JSON.
 Add `OPENAI_API_KEY` or `GEMINI_API_KEY` to `backend/.env` (see
