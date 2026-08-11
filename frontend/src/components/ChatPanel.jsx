@@ -1,4 +1,9 @@
 import { useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css";
 
 export default function ChatPanel({ messages, onSend, sending }) {
   const [draft, setDraft] = useState("");
@@ -9,44 +14,13 @@ export default function ChatPanel({ messages, onSend, sending }) {
     setDraft("");
   };
 
-  // Minimal markdown-like renderer: handles $$...$$ blocks, **bold**, and simple lists
-  const renderMarkdown = (text) => {
-    if (!text) return "";
-    const escapeHtml = (s) =>
-      s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-    // Split $$...$$ blocks
-    const parts = text.split(/(\$\$[\s\S]*?\$\$)/g);
-    const htmlParts = parts.map((part) => {
-      if (part.startsWith("$$") && part.endsWith("$$")) {
-        const inner = part.slice(2, -2).trim();
-        return `<pre class="font-mono text-xs whitespace-pre-wrap p-2 bg-void border border-slateline rounded-md">${escapeHtml(inner)}</pre>`;
-      }
-      // inline **bold**
-      let escaped = escapeHtml(part).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-      const lines = escaped.split(/\r?\n/);
-      let inList = false;
-      let out = [];
-      lines.forEach((ln) => {
-        if (ln.trim().match(/^([*-])\s+/)) {
-          if (!inList) {
-            inList = true;
-            out.push("<ul class='list-disc pl-5'>");
-          }
-          out.push(`<li>${ln.replace(/^([*-])\s+/, "")}</li>`);
-        } else {
-          if (inList) {
-            inList = false;
-            out.push("</ul>");
-          }
-          if (ln.trim() === "") out.push("<br/>");
-          else out.push(`<p class='my-1'>${ln}</p>`);
-        }
-      });
-      if (inList) out.push("</ul>");
-      return out.join("");
-    });
-    return htmlParts.join("");
+  const Code = ({ inline, children, className }) => {
+    if (inline) return <code className="bg-void px-1 py-0.5 rounded text-xs">{children}</code>;
+    return (
+      <pre className="bg-void p-2 rounded border border-slateline overflow-auto text-xs">
+        <code>{children}</code>
+      </pre>
+    );
   };
 
   return (
@@ -64,13 +38,20 @@ export default function ChatPanel({ messages, onSend, sending }) {
         {messages.map((m, i) => (
           <div
             key={i}
-            className={`text-xs leading-relaxed max-w-[85%] rounded-md px-3 py-2 whitespace-pre-wrap prose prose-invert prose-xs ${
+            className={`text-xs leading-relaxed max-w-[85%] rounded-md px-3 py-2 whitespace-pre-wrap prose prose-invert prose-sm ${
               m.role === "user"
                 ? "bg-phase0/10 border border-phase0/30 ml-auto text-mist"
                 : "bg-void border border-slateline text-mist"
             }`}
-            dangerouslySetInnerHTML={{ __html: renderMarkdown(m.content) }}
-          />
+          >
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm, remarkMath]}
+              rehypePlugins={[rehypeKatex]}
+              components={{ code: Code }}
+            >
+              {m.content}
+            </ReactMarkdown>
+          </div>
         ))}
         {sending && <p className="text-xs text-fog">Thinking…</p>}
       </div>

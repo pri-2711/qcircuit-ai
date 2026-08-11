@@ -27,6 +27,7 @@ export default function App() {
   const [sending, setSending] = useState(false);
   const [backendUnreachable, setBackendUnreachable] = useState(false);
   const [chatHeight, setChatHeight] = useState(224); // px, default ~h-56
+  const [editorHeight, setEditorHeight] = useState(320);
 
   useEffect(() => {
     api
@@ -115,16 +116,40 @@ export default function App() {
           activeExampleKey={activeExampleKey}
         />
 
-        <main className="flex-1 min-w-0 grid grid-rows-2">
-          <CodeEditor
-            code={code}
-            onChange={setCode}
-            language={language}
-            onRun={run}
-            running={running}
-            error={runError}
+        <main className="flex-1 min-w-0 flex flex-col">
+          <div style={{ height: editorHeight }} className="min-h-0">
+            <CodeEditor
+              code={code}
+              onChange={setCode}
+              language={language}
+              onRun={run}
+              running={running}
+              error={runError}
+            />
+          </div>
+
+          <div
+            onMouseDown={(e) => {
+              e.preventDefault();
+              const startY = e.clientY;
+              const startH = editorHeight;
+              const onMove = (ev) => {
+                const dy = ev.clientY - startY; // positive when dragging down
+                const next = Math.max(120, Math.min(window.innerHeight - 200, startH + dy));
+                setEditorHeight(next);
+              };
+              const onUp = () => {
+                window.removeEventListener("mousemove", onMove);
+                window.removeEventListener("mouseup", onUp);
+              };
+              window.addEventListener("mousemove", onMove);
+              window.addEventListener("mouseup", onUp);
+            }}
+            className="h-2 cursor-row-resize bg-slate/20"
+            title="Drag to resize code editor"
           />
-          <div className="border-t border-slateline min-h-0">
+
+          <div className="border-t border-slateline min-h-0 flex-1">
             <ResultsTabs simResult={simResult} />
           </div>
         </main>

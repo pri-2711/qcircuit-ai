@@ -46,3 +46,11 @@ html, body, #root {
     #4FD8EB 360deg
   );
 }
+
+/* Small tweaks for rendered markdown in chat */
+.prose pre {
+  margin: 0.25rem 0;
+}
+.prose p { margin: 0.2rem 0; }
+.prose ul { margin: 0.2rem 0 0.6rem 1rem; }
+.prose code { background: #0b0e14; padding: 0.08rem 0.3rem; border-radius: 4px; }
