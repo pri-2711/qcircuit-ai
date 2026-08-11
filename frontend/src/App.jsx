@@ -26,6 +26,7 @@ export default function App() {
   const [chatMessages, setChatMessages] = useState([]);
   const [sending, setSending] = useState(false);
   const [backendUnreachable, setBackendUnreachable] = useState(false);
+  const [chatHeight, setChatHeight] = useState(224); // px, default ~h-56
 
   useEffect(() => {
     api
@@ -134,7 +135,32 @@ export default function App() {
           </div>
         </div>
       </div>
-      <ChatPanel messages={chatMessages} onSend={sendChat} sending={sending} />
+      <div className="flex-shrink-0">
+        <div
+          onMouseDown={(e) => {
+            e.preventDefault();
+            const startY = e.clientY;
+            const startH = chatHeight;
+            const onMove = (ev) => {
+              const dy = startY - ev.clientY; // positive when dragging up
+              const next = Math.max(100, Math.min(900, startH + dy));
+              setChatHeight(next);
+            };
+            const onUp = () => {
+              window.removeEventListener("mousemove", onMove);
+              window.removeEventListener("mouseup", onUp);
+            };
+            window.addEventListener("mousemove", onMove);
+            window.addEventListener("mouseup", onUp);
+          }}
+          className="h-2 cursor-row-resize bg-slate/20"
+          title="Drag to resize tutor"
+        />
+
+        <div style={{ height: chatHeight }} className="border-t border-slateline bg-slate/40">
+          <ChatPanel messages={chatMessages} onSend={sendChat} sending={sending} />
+        </div>
+      </div>
     </div>
   );
 }

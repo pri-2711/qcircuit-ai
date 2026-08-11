@@ -54,12 +54,7 @@ export default function Sidebar({ language, onLanguageChange, examples, onLoadEx
         </ul>
       </div>
 
-      <div className="px-4 py-3 border-t border-slateline">
-        <div className="flex items-start gap-2 text-[11px] text-fog leading-snug">
-          <span className="w-3 h-3 rounded-full phase-wheel inline-block mt-0.5 shrink-0" />
-          <span>Amplitude = bar length • Phase = color</span>
-        </div>
-      </div>
+      {/* legend intentionally removed: amplitude/phase explained in the Statevector tab */}
     </aside>
   );
 }
