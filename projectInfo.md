@@ -19,6 +19,7 @@ Key goals:
 
 Overall architecture (frontend ↔ backend):
 
+```mermaid
 flowchart TB
     subgraph Frontend
         A[User Browser]
@@ -42,6 +43,7 @@ flowchart TB
     C -->|Simulation and Analysis Results| B
     F -->|Question and Circuit Context| G
     G -->|AI Explanation| F
+```
 
 Notes:
 - The frontend runs in the user's browser and calls backend endpoints via the Vite dev proxy (development) or directly to the server in production.
