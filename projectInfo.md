@@ -19,25 +19,29 @@ Key goals:
 
 Overall architecture (frontend ↔ backend):
 
-```mermaid
 flowchart TB
-  subgraph Frontend
-    A[User Browser (React + Vite)]
-    A --> B[UI: Editor, Sidebar, Panels]
-  end
+    subgraph Frontend
+        A[User Browser]
+        B[React and Vite UI]
+        A --> B
+    end
 
-  subgraph Backend
-    C[FastAPI server]
-    C --> D[Simulator (Qiskit-based sandbox)]
-    C --> E[Analyzer & pattern detectors]
-    C --> F[Explainer (template + LLM bridge)]
-  end
+    subgraph Backend
+        C[FastAPI Server]
+        D[Qiskit Simulator]
+        E[Circuit Analyzer]
+        F[AI Explainer]
+        C --> D
+        C --> E
+        C --> F
+    end
 
-  A -- HTTP JSON --> C
-  C -- JSON result --> A
-  A -- Chat message --> C
-  C -- (optional) LLM HTTP --> G[OpenAI / Gemini]
-```
+    G[Gemini LLM]
+
+    B -->|Circuit and Questions| C
+    C -->|Simulation and Analysis Results| B
+    F -->|Question and Circuit Context| G
+    G -->|AI Explanation| F
 
 Notes:
 - The frontend runs in the user's browser and calls backend endpoints via the Vite dev proxy (development) or directly to the server in production.
@@ -217,10 +221,6 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 
 ---
 
-If you want, I can:
-- Add inline examples of the heavyweight functions from `explainer.py` and `simulator.py`.
-- Generate unit test skeletons for the analyzer heuristics.
-- Create Dockerfiles for backend sandboxing and frontend static hosting.
 
 
 <!-- EOF -->
