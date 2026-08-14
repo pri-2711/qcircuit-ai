@@ -52,7 +52,7 @@ Add `OPENAI_API_KEY` or `GEMINI_API_KEY` to `backend/.env` (see
 | Circuit stats (depth, gate counts)                          | ✅ working |
 | Optimization suggestions                                    | ✅ basic (transpile-diff + adjacent-inverse-gate detection) |
 | AI explanations                                            | ✅ template mode always on; LLM mode if you add an API key |
-| Conversational tutor                                        | ✅ same as above |
+| Conversational tutor                                        | ✅ working (gemini) |
 | Circuit similarity search / automated design (future work)   | not started -- `analyzer.py`'s docstring marks where it plugs in |
 
 ## Repo layout
@@ -84,4 +84,4 @@ quantum-explorer/
    to start).
 5. **Real LLM tool-calling.** `explainer.py` is a good foundation but doesn't let
    the model act (e.g. "let me try removing that gate and re-simulating" ) --
-   that's where LangChain/LangGraph earns its keep, per the original brief.
+   Its like an AI Tutor or a chatbot which will help user to have a better understanding by answering the questions asked. 
